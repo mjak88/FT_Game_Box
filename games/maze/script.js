@@ -21,7 +21,7 @@ let gameInterval = null;
 let solutionPath = [];
 
 // Unified Backend Sync Webhook Configuration
-const GOOGLE_URL = "https://script.google.com/macros/s/1cGTCyrZ_MGVTdLLJN6KCOWXRJ6-TNomf-U9yiWqlREg/exec";
+const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbxHucKCCGnTlVtbDEAVQ0uoXVkOB4PE9Ax1a23RqoGaGKS3EL3TKGMlxzMuscolMiCi/exec";
 
 function initMaze() {
     maze = [];
