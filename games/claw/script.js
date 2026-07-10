@@ -56,23 +56,36 @@ async function endClawGame() {
     gameActive = false;
     clearInterval(timerInterval);
 
+    // 1. Calculate the prize won based on game performance score thresholds
     let prizeWon = "Hard Luck";
     if (score >= 45) prizeWon = "Free Dessert & Drink";
     else if (score >= 25) prizeWon = "Free Super Side";
     else if (score >= 10) prizeWon = "Free Fruit Juice";
 
+    // 2. Pull the active coupon code out of tablet browser session storage
     const couponCode = sessionStorage.getItem('active_coupon') || "TEST_CLAW";
+    const phone = "CUSTOMER"; // Fallback identifier parameter
+
+    // 3. Build a clean, synchronous GET payload URL to bypass CORS blocks completely
+    const targetUrl = `${GOOGLE_URL}?action=recordWin&code=${encodeURIComponent(couponCode)}&prize=${encodeURIComponent(prizeWon)}&phone=${encodeURIComponent(phone)}`;
 
     try {
-        await fetch(`${GOOGLE_URL}?action=recordWin&code=${encodeURIComponent(couponCode)}&prize=${encodeURIComponent(prizeWon)}`, {
-            method: 'POST',
-            mode: 'no-cors'
-        });
-    } catch(err) { console.error(err); }
+        console.log("Transmitting burn request...");
+        // Use GET with no-cors to successfully punch through backend endpoints
+        await fetch(targetUrl, { method: 'GET', mode: 'no-cors' });
+        console.log("Coupon burn registered.");
+    } catch(err) { 
+        console.error("Network communication error:", err); 
+    }
 
-    alert(`Time's Up! Total Collected: ${score} pts. Reward: ${prizeWon}`);
+    // 4. Wipe out browser temporary state files to prevent page back-button exploits
     sessionStorage.clear();
-    window.location.href = "../../index.html";
+
+    // 5. Notify the player and redirect back to the home screen carousel
+    setTimeout(() => {
+        alert(`Time's Up! Total Collected: ${score} pts.\nReward: ${prizeWon}`);
+        window.location.href = "../../index.html";
+    }, 500);
 }
 
 function update() {
