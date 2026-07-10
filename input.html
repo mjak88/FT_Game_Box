@@ -29,6 +29,7 @@
     // Explicit protection layout: ensure no carryover validation flags exist before checking a new code
     sessionStorage.removeItem('player_authenticated');
     sessionStorage.removeItem('active_coupon');
+    sessionStorage.removeItem('customer_phone');
 
     async function validateCoupon() {
         // Sanitization Layer: Trim inputs and forcefully block special characters or injections
@@ -59,6 +60,7 @@
                 // Instantly register new clean localized browser access tokens
                 sessionStorage.setItem('player_authenticated', 'true');
                 sessionStorage.setItem('active_coupon', couponInput);
+                sessionStorage.setItem('customer_phone', phone);
                 window.location.href = "game-selection.html"; 
             } else {
                 errorMsg.innerText = "INVALID OR ALREADY USED CODE";
