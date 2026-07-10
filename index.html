@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crystal Game Hub</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container" onclick="startFreshSession()">
+        <img src="https://lh3.googleusercontent.com/d/1sTDl0gvJl6z6ypAi7nsVdiRyTKgox_Wu" alt="Crystal Logo" class="logo">
+        <h1 class="glow-text">WELCOME</h1>
+        <p>Tap anywhere to start your journey</p>
+    </div>
+
+    <script>
+        function startFreshSession() {
+            // Anti-Misuse: Clear out any previous player authentication flags entirely 
+            // right when a new customer approaches the tablet to start fresh.
+            sessionStorage.removeItem('player_authenticated');
+            sessionStorage.removeItem('active_coupon');
+            window.location.href = 'input.html';
+        }
+    </script>
+</body>
+</html>

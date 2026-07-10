@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cashier Control Terminal</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .cashier-ui { max-width: 500px; margin: auto; padding: 20px; }
+        .input-box { width: 100%; padding: 15px; font-size: 1.3rem; margin: 8px 0; background: #000; color: #00ff88; border: 2px solid #333; text-align: center; box-sizing: border-box; }
+        #print-section { margin-top: 20px; background: #111; padding: 20px; border-radius: 10px; display: none; }
+        .code-card { background: white; color: black; padding: 20px; margin: 15px 0; border-radius: 5px; font-family: monospace; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .code-text { font-size: 2.6rem; font-weight: bold; display: block; margin: 10px 0; letter-spacing: 2px; }
+        .logout-btn { background: #333; color: #aaa; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; float: right; margin-top: 10px; }
+        
+        /* Live Wins Feed Tracker Panel */
+        .live-wins-panel { background: #0c0c0c; border: 2px dashed #00ffff; border-radius: 12px; margin-top: 30px; padding: 15px; text-align: left; }
+        .win-row { display: flex; justify-content: space-between; border-bottom: 1px solid #222; padding: 8px 0; font-size: 0.9rem; }
+        .win-row:last-child { border-bottom: none; }
+        .win-prize { color: #ffd700; font-weight: bold; }
+
+        @media print {
+            body * { visibility: hidden; }
+            #print-section, #print-section * { visibility: visible; }
+            #print-section { position: absolute; left: 0; top: 0; width: 100%; display: block !important; background: white !important; }
+            .code-card { border-bottom: 3px dashed black; page-break-after: always; box-shadow: none; margin: 0; padding: 40px 20px; }
+            #gen-btn, #print-btn, h1, p, .input-box, .logout-btn, .no-print, .live-wins-panel { display: none !important; }
+        }
+    </style>
+</head>
+<body style="display: block; text-align: center; background: #050505; overflow-y: auto;">
+
+    <div id="auth-screen" class="overlay">
+        <div class="entry-card">
+            <h2 style="color: cyan; margin-top:0;">CASHIER ACCESS PIN</h2>
+            <input type="password" id="pass-input" placeholder="••••••••" maxlength="12" style="-webkit-text-security: disc;">
+            <div id="login-err" style="color: #ff0055; font-weight: bold; margin-bottom: 15px; min-height: 20px;"></div>
+            <button onclick="loginCashier()">LOGIN</button>
+        </div>
+    </div>
+
+    <div id="controls" class="cashier-ui" style="display: none;">
+        <button class="logout-btn" onclick="logoutCashier()">LOGOUT</button>
+        <h1 style="color: white; margin-top: 20px;">ORDER REWARDS</h1>
+        <p style="color: #888;">Generates 1 Play Code per 300 EGP Spent</p>
+        
+        <input type="text" id="odoo-id" class="input-box" placeholder="Enter Odoo Order ID" autocomplete="off" style="text-transform: uppercase;">
+        <input type="number" id="order-total" class="input-box" placeholder="Enter Invoice Total (EGP)" min="300" autocomplete="off">
+        
+        <button id="gen-btn" onclick="processOrder()" style="padding: 20px; width: 100%; font-size: 1.2rem; background: #00ff88; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; color: black; margin-top: 10px;">
+            GENERATE CODES
+        </button>
+
+        <div id="print-section">
+            <h2 style="color: white; font-size: 1.1rem;" class="no-print">Generated Reward Receipts:</h2>
+            <div id="code-list"></div>
+            <button id="print-btn" onclick="window.print()" style="padding: 18px; width: 100%; background: cyan; color: black; border: none; font-weight: bold; margin-top: 15px; cursor: pointer; border-radius: 6px; font-size: 1rem;">
+                PRINT SLIPS (THERMAL)
+            </button>
+        </div>
+
+        <div id="status-msg" style="margin-top: 20px; color: cyan; font-weight: bold;"></div>
+
+        <div class="live-wins-panel no-print">
+            <h3 style="color: #00ffff; margin: 0 0 10px 0; font-size: 1.1rem; border-bottom: 1px solid #333; padding-bottom: 5px;">🏆 LIVE WIN MONITOR</h3>
+            <div id="live-wins-feed">
+                <p style="color: #666; font-size: 0.85rem; text-align: center; margin: 10px 0;">Awaiting game completions from tablet...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbzcHD3LQYl9MMn0vfxnyVFf7ZDoTuWC9HM2LOvwpzPlf2mW1oZsI8uQ2VLQ4sA3N-8G/exec";
+
+        window.addEventListener('DOMContentLoaded', () => {
+            if (sessionStorage.getItem('cashier_logged_in') === 'true') {
+                showDashboard();
+                startWinsPolling(); // Activate real-time tracking stream immediately
+            } else {
+                logoutCashier();
+            }
+        });
+
+        function loginCashier() {
+            const pin = document.getElementById('pass-input').value;
+            const err = document.getElementById('login-err');
+            if (pin === "11223344") {
+                sessionStorage.setItem('cashier_logged_in', 'true');
+                err.innerText = "";
+                showDashboard();
+                startWinsPolling();
+            } else {
+                err.innerText = "INVALID SYSTEM ACCESS PIN";
+                document.getElementById('pass-input').value = "";
+            }
+        }
+
+        function showDashboard() {
+            document.getElementById('auth-screen').style.display = 'none';
+            document.getElementById('controls').style.display = 'block';
+        }
+
+        function logoutCashier() {
+            sessionStorage.removeItem('cashier_logged_in');
+            document.getElementById('pass-input').value = "";
+            document.getElementById('auth-screen').style.display = 'flex';
+            document.getElementById('controls').style.display = 'none';
+        }
+
+        async function processOrder() {
+            const odooId = document.getElementById('odoo-id').value.trim().toUpperCase();
+            const totalInput = document.getElementById('order-total').value;
+            const total = parseFloat(totalInput);
+            const status = document.getElementById('status-msg');
+            const codeList = document.getElementById('code-list');
+            const genBtn = document.getElementById('gen-btn');
+            
+            if (!odooId) {
+                alert("You must enter a valid Odoo Order ID to trace this transaction.");
+                return;
+            }
+            if (isNaN(total) || total < 300) {
+                alert("Minimum qualifying receipt boundary is 300 EGP");
+                return;
+            }
+
+            const codeCount = Math.floor(total / 300);
+            status.innerText = "Validating Order ID and minting tickets...";
+            genBtn.disabled = true;
+            genBtn.style.background = "#444";
+
+            try {
+                // Send both odooId and total to the script to check for historical duplicate generation entries
+                const response = await fetch(`${GOOGLE_URL}?action=generate&pw=11223344&odooId=${encodeURIComponent(odooId)}&count=${codeCount}`);
+                const resultText = await response.text();
+                
+                if (resultText.startsWith("ERROR:")) {
+                    // Script cleanly screams blocking alert details if order already has coupons issued
+                    alert(resultText);
+                    status.innerText = resultText;
+                    status.style.color = "#ff0055";
+                } else {
+                    status.style.color = "cyan";
+                    codeList.innerHTML = "";
+                    const codesArray = resultText.split(",");
+                    
+                    codesArray.forEach(code => {
+                        if(code.trim()) {
+                            codeList.innerHTML += `
+                                <div class="code-card">
+                                    <h3 style="margin:0; font-size: 1rem; color: #333;">FAST TRAVEL RESTAURANT</h3>
+                                    <p style="margin: 2px 0 10px 0; font-size: 0.8rem; color: #666;">ORDER ID: ${odooId}</p>
+                                    <span class="code-text">${code.trim()}</span>
+                                    <p style="margin:5px 0 0 0; font-size: 0.75rem; color: red; font-weight: bold;">Valid for 1 Entry Scan</p>
+                                </div>
+                            `;
+                        }
+                    });
+
+                    document.getElementById('print-section').style.display = 'block';
+                    status.innerText = "Tickets synchronized. Ready to print.";
+                    document.getElementById('order-total').value = "";
+                    document.getElementById('odoo-id').value = "";
+                }
+            } catch (e) {
+                status.innerText = "CRITICAL SERVER CONNECTION TIMEOUT. TRY AGAIN.";
+            } finally {
+                genBtn.disabled = false;
+                genBtn.style.background = "#00ff88";
+            }
+        }
+
+        // Live Poll: Checks separate sheet wins log matrix tab every 7 seconds
+        function startWinsPolling() {
+            setInterval(async () => {
+                if (sessionStorage.getItem('cashier_logged_in') !== 'true') return;
+                try {
+                    const response = await fetch(`${GOOGLE_URL}?action=getLiveWins`);
+                    const winsData = await response.json();
+                    const feed = document.getElementById('live-wins-feed');
+                    
+                    if (winsData.length === 0) {
+                        feed.innerHTML = `<p style="color: #666; font-size: 0.85rem; text-align: center; margin: 10px 0;">No prizes claimed yet today.</p>`;
+                        return;
+                    }
+                    
+                    feed.innerHTML = "";
+                    winsData.forEach(win => {
+                        feed.innerHTML += `
+                            <div class="win-row">
+                                <span><b>ID:</b> ${win.odooId} (${win.phone})</span>
+                                <span class="win-prize">🎁 ${win.prize}</span>
+                            </div>
+                        `;
+                    });
+                } catch(e) { /* Fail silently to protect monitoring panel performance stability */ }
+            }, 7000);
+        }
+    </script>
+</body>
+</html>

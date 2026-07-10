@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crystal Check-in</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .input-container { display: flex; flex-direction: column; gap: 20px; width: 80%; max-width: 400px; margin: auto; }
+        input { padding: 15px; font-size: 1.2rem; background: #222; border: 2px solid #FF0000; color: white; border-radius: 8px; text-align: center; }
+        button { padding: 15px; font-size: 1.2rem; background: #FF0000; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        button:disabled { background: #555; cursor: not-allowed; }
+        .error-message { color: #FF0055; font-weight: bold; margin-top: -10px; min-height: 20px; font-size: 0.95rem; }
+    </style>
+</head>
+<body>
+
+<div class="input-container">
+    <h2 style="color: #FF0000; margin-bottom: 5px;">ENTER DETAILS</h2>
+    <input type="tel" id="mobile" placeholder="Mobile Number" required autocomplete="off">
+    <input type="text" id="coupon" placeholder="Enter Coupon Code" maxlength="9" required autocomplete="off" style="text-transform: uppercase;">
+    <div id="entry-error" class="error-message"></div>
+    <button id="next-btn" onclick="validateCoupon()">NEXT</button>
+</div>
+
+<script>
+    const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbzcHD3LQYl9MMn0vfxnyVFf7ZDoTuWC9HM2LOvwpzPlf2mW1oZsI8uQ2VLQ4sA3N-8G/exec"; 
+
+    // Explicit protection layout: ensure no carryover validation flags exist before checking a new code
+    sessionStorage.removeItem('player_authenticated');
+    sessionStorage.removeItem('active_coupon');
+
+    async function validateCoupon() {
+        // Sanitization Layer: Trim inputs and forcefully block special characters or injections
+        const phone = document.getElementById('mobile').value.replace(/[^0-9]/g, '').trim();
+        const couponInput = document.getElementById('coupon').value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().trim();
+        const nextBtn = document.getElementById('next-btn');
+        const errorMsg = document.getElementById('entry-error');
+
+        if (!phone || !couponInput) {
+            errorMsg.innerText = "Please fill in both fields correctly.";
+            return;
+        }
+        if (couponInput.length < 5) {
+            errorMsg.innerText = "Invalid code length structure.";
+            return;
+        }
+
+        // Prevent double submit spams
+        errorMsg.innerText = ""; 
+        nextBtn.innerText = "VERIFYING...";
+        nextBtn.disabled = true;
+
+        try {
+            const response = await fetch(`${GOOGLE_URL}?action=verify&code=${encodeURIComponent(couponInput)}`);
+            const result = await response.text();
+            
+            if (result.trim() === "VALID") {
+                // Instantly register new clean localized browser access tokens
+                sessionStorage.setItem('player_authenticated', 'true');
+                sessionStorage.setItem('active_coupon', couponInput);
+                window.location.href = "game-selection.html"; 
+            } else {
+                errorMsg.innerText = "INVALID OR ALREADY USED CODE";
+                nextBtn.innerText = "NEXT";
+                nextBtn.disabled = false;
+            }
+        } catch (error) {
+            errorMsg.innerText = "SERVER CONNECTION FAILED. TRY AGAIN.";
+            nextBtn.innerText = "NEXT";
+            nextBtn.disabled = false;
+        }
+    }
+
+    document.getElementById('coupon').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            validateCoupon();
+        }
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tablet Maze Escape - 1 Minute Challenge</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: #0b0f19;
+            color: #e2e8f0;
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            touch-action: manipulation; /* Disables double-tap zooming */
+        }
+        .container {
+            text-align: center;
+            background-color: #111827;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 2px solid #1f2937;
+            max-width: 650px;
+            width: 95%;
+        }
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #030712;
+            padding: 14px 20px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+        #timer {
+            color: #ef4444;
+            font-size: 1.3rem;
+        }
+        .progress-container {
+            width: 100%;
+            background-color: #374151;
+            height: 8px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+        #progress-bar {
+            width: 100%;
+            height: 100%;
+            background-color: #ef4444;
+            transition: width 0.1s linear;
+        }
+        canvas {
+            background-color: #030712;
+            border: 4px solid #374151;
+            border-radius: 8px;
+            display: block;
+            margin: 0 auto 15px auto;
+            width: 90% !important; /* Scale dynamically on tablet layouts */
+            max-width: 500px;
+            height: auto;
+        }
+        .btn {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            font-size: 1.1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+            width: 100%;
+            max-width: 300px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .btn:active {
+            background-color: #2563eb;
+        }
+        /* Tap Target Layout for Touch Screens */
+        .dpad {
+            display: grid;
+            grid-template-columns: repeat(3, 75px);
+            grid-template-rows: repeat(3, 75px);
+            gap: 12px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .dbtn {
+            background-color: #1f2937;
+            color: white;
+            border: 2px solid #374151;
+            border-radius: 12px;
+            font-size: 1.6rem;
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .dbtn:active {
+            background-color: #3b82f6;
+            border-color: #60a5fa;
+        }
+        #up { grid-column: 2; grid-row: 1; }
+        #left { grid-column: 1; grid-row: 2; }
+        #right { grid-column: 3; grid-row: 2; }
+        #down { grid-column: 2; grid-row: 3; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="status-bar">
+        <div id="status">Find the green exit square!</div>
+        <div id="timer">60.0s</div>
+    </div>
+    
+    <div class="progress-container">
+        <div id="progress-bar"></div>
+    </div>
+    
+    <canvas id="mazeCanvas"></canvas>
+    
+    <button class="btn" onclick="resetGame()">New Maze</button>
+    
+    <div class="dpad">
+        <button class="dbtn" id="up" onmousedown="movePlayer(0, -1)" ontouchstart="movePlayer(0, -1); event.preventDefault();">▲</button>
+        <button class="dbtn" id="left" onmousedown="movePlayer(-1, 0)" ontouchstart="movePlayer(-1, 0); event.preventDefault();">◀</button>
+        <button class="dbtn" id="right" onmousedown="movePlayer(1, 0)" ontouchstart="movePlayer(1, 0); event.preventDefault();">▶</button>
+        <button class="dbtn" id="down" onmousedown="movePlayer(0, 1)" ontouchstart="movePlayer(0, 1); event.preventDefault();">▼</button>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('mazeCanvas');
+    const ctx = canvas.getContext('2d');
+    const statusText = document.getElementById('status');
+    const timerText = document.getElementById('timer');
+    const progressBar = document.getElementById('progress-bar');
+
+    const mazeWidth = 25; 
+    const mazeHeight = 25;
+    const cellSize = 18; 
+
+    canvas.width = mazeWidth * cellSize;
+    canvas.height = mazeHeight * cellSize;
+
+    let maze = [];
+    let player = { x: 1, y: 1 };
+    let goal = { x: mazeWidth - 2, y: mazeHeight - 2 };
+    let gameActive = false;
+    let timeRemaining = 60.0;
+    const maxTimeLimit = 60.0; /* Locked at 60 seconds */
+    let gameInterval = null;
+    let solutionPath = [];
+
+    function initMaze() {
+        maze = [];
+        for (let y = 0; y < mazeHeight; y++) {
+            maze[y] = [];
+            for (let x = 0; x < mazeWidth; x++) {
+                maze[y][x] = 1;
+            }
+        }
+    }
+
+    function generateMaze() {
+        initMaze();
+        let stack = [];
+        let current = { x: 1, y: 1 };
+        maze[current.y][current.x] = 0;
+
+        while (true) {
+            let neighbors = [];
+            let directions = [
+                { x: 0, y: -2 }, { x: 0, y: 2 },
+                { x: -2, y: 0 }, { x: 2, y: 0 }
+            ];
+
+            directions.forEach(dir => {
+                let nx = current.x + dir.x;
+                let ny = current.y + dir.y;
+                if (nx > 0 && nx < mazeWidth - 1 && ny > 0 && ny < mazeHeight - 1) {
+                    if (maze[ny][nx] === 1) {
+                        neighbors.push({ x: nx, y: ny, dx: dir.x / 2, dy: dir.y / 2 });
+                    }
+                }
+            });
+
+            if (neighbors.length > 0) {
+                let next = neighbors[Math.floor(Math.random() * neighbors.length)];
+                maze[current.y + next.dy][current.x + next.dx] = 0;
+                maze[next.y][next.x] = 0;
+                
+                stack.push(current);
+                current = { x: next.x, y: next.y };
+            } else if (stack.length > 0) {
+                current = stack.pop();
+            } else {
+                break;
+            }
+        }
+        findSolution();
+    }
+
+    function findSolution() {
+        let queue = [[{x: 1, y: 1}]];
+        let visited = Array(mazeHeight).fill().map(() => Array(mazeWidth).fill(false));
+        visited[1][1] = true;
+
+        while(queue.length > 0) {
+            let path = queue.shift();
+            let curr = path[path.length - 1];
+
+            if(curr.x === goal.x && curr.y === goal.y) {
+                solutionPath = path;
+                return;
+            }
+
+            let dirs = [{x:0, y:-1}, {x:0, y:1}, {x:-1, y:0}, {x:1, y:0}];
+            for(let d of dirs) {
+                let nx = curr.x + d.x, ny = curr.y + d.y;
+                if(maze[ny] && maze[ny][nx] === 0 && !visited[ny][nx]) {
+                    visited[ny][nx] = true;
+                    queue.push([...path, {x: nx, y: ny}]);
+                }
+            }
+        }
+    }
+
+    function draw(showSolution = false) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        for (let y = 0; y < mazeHeight; y++) {
+            for (let x = 0; x < mazeWidth; x++) {
+                ctx.fillStyle = (maze[y][x] === 1) ? '#1f2937' : '#030712';
+                ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+            }
+        }
+
+        if (showSolution) {
+            ctx.fillStyle = 'rgba(239, 68, 68, 0.4)';
+            solutionPath.forEach(pt => {
+                ctx.fillRect(pt.x * cellSize + 1, pt.y * cellSize + 1, cellSize - 2, cellSize - 2);
+            });
+        }
+
+        ctx.fillStyle = '#10b981'; 
+        ctx.fillRect(goal.x * cellSize + 1, goal.y * cellSize + 1, cellSize - 2, cellSize - 2);
+
+        ctx.fillStyle = '#3b82f6'; 
+        ctx.fillRect(player.x * cellSize + 2, player.y * cellSize + 2, cellSize - 4, cellSize - 4);
+    }
+
+    function movePlayer(dx, dy) {
+        if (!gameActive) return;
+        const targetX = player.x + dx;
+        const targetY = player.y + dy;
+
+        if (maze[targetY] && maze[targetY][targetX] === 0) {
+            player.x = targetX;
+            player.y = targetY;
+            draw();
+            if (player.x === goal.x && player.y === goal.y) gameOver(true);
+        }
+    }
+
+    function startTimer() {
+        clearInterval(gameInterval);
+        timeRemaining = maxTimeLimit;
+        
+        gameInterval = setInterval(() => {
+            timeRemaining -= 0.1;
+            if (timeRemaining <= 0) {
+                timeRemaining = 0;
+                gameOver(false);
+            }
+            timerText.textContent = timeRemaining.toFixed(1) + "s";
+            progressBar.style.width = (timeRemaining / maxTimeLimit * 100) + "%";
+        }, 100);
+    }
+
+    function gameOver(isWin) {
+        gameActive = false;
+        clearInterval(gameInterval);
+        if (isWin) {
+            statusText.textContent = "🏆 ESCAPED!";
+            statusText.style.color = "#10b981";
+        } else {
+            statusText.textContent = "💥 TIME OUT!";
+            statusText.style.color = "#ef4444";
+            draw(true);
+        }
+    }
+
+    function resetGame() {
+        player = { x: 1, y: 1 };
+        statusText.textContent = "Find the green exit square!";
+        statusText.style.color = "#e2e8f0";
+        gameActive = true;
+        
+        generateMaze();
+        draw();
+        startTimer();
+    }
+
+    window.addEventListener('keydown', function(e) {
+        switch(e.key.toLowerCase()) {
+            case 'arrowup': case 'w': movePlayer(0, -1); e.preventDefault(); break;
+            case 'arrowdown': case 's': movePlayer(0, 1); e.preventDefault(); break;
+            case 'arrowleft': case 'a': movePlayer(-1, 0); e.preventDefault(); break;
+            case 'arrowright': case 'd': movePlayer(1, 0); e.preventDefault(); break;
+        }
+    });
+
+    resetGame();
+</script>
+</body>
+</html>
