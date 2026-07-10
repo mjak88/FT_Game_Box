@@ -138,7 +138,7 @@ async function gameOver(isWin) {
     gameActive = false;
     clearInterval(gameInterval);
     
-    // Determine target prize based on escape duration speed thresholds
+    // 1. Calculate the prize based on remaining time thresholds
     let prizeWon = "Hard Luck";
     if (isWin) {
         if (timeRemaining > 35) prizeWon = "Free Main Dish";
@@ -150,24 +150,33 @@ async function gameOver(isWin) {
     } else {
         statusText.textContent = "💥 TIME OUT!";
         statusText.style.color = "#ef4444";
-        draw(true);
+        draw(true); // Reveals solution path
     }
 
+    // 2. Fetch active session identifiers
     const couponCode = sessionStorage.getItem('active_coupon') || "TEST_MAZE";
-    
-    // Fire Webhook to burn coupon and update the LiveWins monitor matrix
-    try {
-        await fetch(`${GOOGLE_URL}?action=recordWin&code=${encodeURIComponent(couponCode)}&prize=${encodeURIComponent(prizeWon)}`, {
-            method: 'POST',
-            mode: 'no-cors'
-        });
-    } catch(err) { console.error(err); }
+    const phone = "CUSTOMER";
 
+    // 3. Construct the clean GET payload URL string
+    const targetUrl = `${GOOGLE_URL}?action=recordWin&code=${encodeURIComponent(couponCode)}&prize=${encodeURIComponent(prizeWon)}&phone=${encodeURIComponent(phone)}`;
+
+    try {
+        console.log("Transmitting burn request to backend via GET...");
+        // Use GET method with no-cors configuration to clear sheet data lines securely
+        await fetch(targetUrl, { method: 'GET', mode: 'no-cors' });
+        console.log("Maze coupon burn successfully transmitted.");
+    } catch(err) { 
+        console.error("Network communication error:", err); 
+    }
+
+    // 4. Wipe out session validation footprints
+    sessionStorage.clear();
+
+    // 5. Notify player and redirect to welcome hub page frame
     setTimeout(() => {
         alert(`Game Complete! Reward: ${prizeWon}`);
-        sessionStorage.clear();
         window.location.href = "../../index.html";
-    }, 1500);
+    }, 500);
 }
 
 function resetGame() {
