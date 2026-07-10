@@ -64,7 +64,7 @@ async function endClawGame() {
 
     // 2. Pull the active coupon code out of tablet browser session storage
     const couponCode = sessionStorage.getItem('active_coupon') || "TEST_CLAW";
-    const phone = "CUSTOMER"; // Fallback identifier parameter
+    const phone = sessionStorage.getItem('customer_phone') || "GUEST";
 
     // 3. Build a clean, synchronous GET payload URL to bypass CORS blocks completely
     const targetUrl = `${GOOGLE_URL}?action=recordWin&code=${encodeURIComponent(couponCode)}&prize=${encodeURIComponent(prizeWon)}&phone=${encodeURIComponent(phone)}`;
