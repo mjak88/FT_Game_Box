@@ -4,7 +4,7 @@ const ctx = canvas.getContext('2d');
 const scoreDisplay = document.getElementById('scoreDisplay');
 const timerDisplay = document.getElementById('timerDisplay');
 
-const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbxHucKCCGnTlVtbDEAVQ0uoXVkOB4PE9Ax1a23RqoGaGKS3EL3TKGMlxzMuscolMiCi/exec";
+const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbzcHD3LQYl9MMn0vfxnyVFf7ZDoTuWC9HM2LOvwpzPlf2mW1oZsI8uQ2VLQ4sA3N-8G/exec"; 
 
 let score = 0, timeLeft = 30, gameActive = true, timerInterval, audioCtx = null, glowPulse = 0, stars = [];
 let crystals = [], spawnTimer = 0, spawnRate = 25;
@@ -63,11 +63,11 @@ async function endClawGame() {
     else if (score >= 10) prizeWon = "Free Fruit Juice";
 
     // 2. Pull the active coupon code out of tablet browser session storage
-    const couponCode = sessionStorage.getItem('active_coupon') || "TEST_CLAW";
+    const odooOrderId = sessionStorage.getItem('active_coupon') || "TEST_CLAW";
     const phone = sessionStorage.getItem('customer_phone') || "GUEST";
 
     // 3. Build a clean, synchronous GET payload URL to bypass CORS blocks completely
-    const targetUrl = `${GOOGLE_URL}?action=recordWin&code=${encodeURIComponent(couponCode)}&prize=${encodeURIComponent(prizeWon)}&phone=${encodeURIComponent(phone)}`;
+    const targetUrl = `${GOOGLE_URL}?action=recordWin&code=${encodeURIComponent(odooOrderId)}&prize=${encodeURIComponent(prizeWon)}&phone=${encodeURIComponent(phone)}`;
 
     try {
         console.log("Transmitting burn request...");
