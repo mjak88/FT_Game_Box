@@ -155,7 +155,7 @@ async function gameOver(isWin) {
 
     // 2. Fetch active session identifiers
     const couponCode = sessionStorage.getItem('active_coupon') || "TEST_MAZE";
-    const phone = "CUSTOMER";
+    const phone = sessionStorage.getItem('customer_phone') || "GUEST";
 
     // 3. Construct the clean GET payload URL string
     const targetUrl = `${GOOGLE_URL}?action=recordWin&code=${encodeURIComponent(couponCode)}&prize=${encodeURIComponent(prizeWon)}&phone=${encodeURIComponent(phone)}`;
