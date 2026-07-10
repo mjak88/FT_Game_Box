@@ -52,7 +52,7 @@ async function terminateMatrixGame() {
 
     // 2. Retrieve the matching storage validation credentials
     const couponCode = sessionStorage.getItem('active_coupon') || "TEST_ELEMENTS";
-    const phone = "CUSTOMER";
+    const phone = sessionStorage.getItem('customer_phone') || "GUEST";
 
     // 3. Assemble the updated GET webhook URL structure
     const targetUrl = `${GOOGLE_URL}?action=recordWin&code=${encodeURIComponent(couponCode)}&prize=${encodeURIComponent(prizeWon)}&phone=${encodeURIComponent(phone)}`;
