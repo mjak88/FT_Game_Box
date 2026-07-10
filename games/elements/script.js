@@ -2,7 +2,7 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-const GOOGLE_URL = "https://script.google.com/macros/s/1cGTCyrZ_MGVTdLLJN6KCOWXRJ6-TNomf-U9yiWqlREg/exec";
+const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbxHucKCCGnTlVtbDEAVQ0uoXVkOB4PE9Ax1a23RqoGaGKS3EL3TKGMlxzMuscolMiCi/exec";
 
 function playSound(type) {
     const osc = audioCtx.createOscillator();
