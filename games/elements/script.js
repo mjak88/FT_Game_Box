@@ -2,7 +2,7 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbxHucKCCGnTlVtbDEAVQ0uoXVkOB4PE9Ax1a23RqoGaGKS3EL3TKGMlxzMuscolMiCi/exec";
+const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbw13TamXZN6M7GkIoiHWKSLnNkzD2BCCPczrX04C9e0wRFJTMFuIaAUgZ-dx5g3sMkJtA/exec"; 
 
 function playSound(type) {
     const osc = audioCtx.createOscillator();
@@ -51,11 +51,11 @@ async function terminateMatrixGame() {
     else if (score >= 7) prizeWon = "Free Soft Drink";
 
     // 2. Retrieve the matching storage validation credentials
-    const couponCode = sessionStorage.getItem('active_coupon') || "TEST_ELEMENTS";
+    const odooOrderId = sessionStorage.getItem('active_coupon') || "TEST_ELEMENTS";
     const phone = sessionStorage.getItem('customer_phone') || "GUEST";
 
     // 3. Assemble the updated GET webhook URL structure
-    const targetUrl = `${GOOGLE_URL}?action=recordWin&code=${encodeURIComponent(couponCode)}&prize=${encodeURIComponent(prizeWon)}&phone=${encodeURIComponent(phone)}`;
+    const targetUrl = `${GOOGLE_URL}?action=recordWin&code=${encodeURIComponent(odooOrderId)}&prize=${encodeURIComponent(prizeWon)}&phone=${encodeURIComponent(phone)}`;
 
     try {
         console.log("Transmitting element score data via GET payload...");
