@@ -44,23 +44,35 @@ function handleInput(type) {
 async function terminateMatrixGame() {
     gameLoopActive = false;
     
+    // 1. Calculate the prize based on the player's matrix hit points score
     let prizeWon = "Hard Luck";
     if (score >= 25) prizeWon = "Free Combo Meal";
     else if (score >= 15) prizeWon = "Free Sushi Roll";
     else if (score >= 7) prizeWon = "Free Soft Drink";
 
+    // 2. Retrieve the matching storage validation credentials
     const couponCode = sessionStorage.getItem('active_coupon') || "TEST_ELEMENTS";
+    const phone = "CUSTOMER";
+
+    // 3. Assemble the updated GET webhook URL structure
+    const targetUrl = `${GOOGLE_URL}?action=recordWin&code=${encodeURIComponent(couponCode)}&prize=${encodeURIComponent(prizeWon)}&phone=${encodeURIComponent(phone)}`;
 
     try {
-        await fetch(`${GOOGLE_URL}?action=recordWin&code=${encodeURIComponent(couponCode)}&prize=${encodeURIComponent(prizeWon)}`, {
-            method: 'POST',
-            mode: 'no-cors'
-        });
-    } catch(err) { console.error(err); }
+        console.log("Transmitting element score data via GET payload...");
+        await fetch(targetUrl, { method: 'GET', mode: 'no-cors' });
+        console.log("Elements entry cleared and tracking logged.");
+    } catch(err) { 
+        console.error("Network synchronization issue encountered:", err); 
+    }
 
-    alert(`Game Over! Total Matrix Points: ${score}. Reward: ${prizeWon}`);
+    // 4. Clean storage tokens to lock out re-runs
     sessionStorage.clear();
-    window.location.href = "../../index.html";
+
+    // 5. Present the user alert and loop back smoothly
+    setTimeout(() => {
+        alert(`Game Over! Total Matrix Points: ${score}.\nReward: ${prizeWon}`);
+        window.location.href = "../../index.html";
+    }, 500);
 }
 
 function update() {
