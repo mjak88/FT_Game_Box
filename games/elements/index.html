@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>The Elements Matrix</title>
+    <link rel="stylesheet" href="../../style.css">
+    <style>
+        body { background: #1a1a1a; color: white; text-align: center; font-family: sans-serif; touch-action: manipulation; }
+        canvas { background: #000; border: 4px solid #444; margin-top: 10px; display: block; margin: auto; max-width: 95%; }
+        .controls { display: flex; justify-content: center; gap: 10px; margin-top: 20px; }
+        .btn { padding: 20px 30px; font-size: 18px; font-weight: bold; border: none; cursor: pointer; color: white; border-radius: 10px; text-transform: uppercase; }
+        #fire { background: #FF4500; } #water { background: #1E90FF; } #grass { background: #32CD32; }
+    </style>
+</head>
+<body>
+    <h1>Score: <span id="score">0</span> | Time: <span id="timer">60</span></h1>
+    <canvas id="gameCanvas" width="800" height="300"></canvas>
+    
+    <div class="controls">
+        <button class="btn" id="fire">FIRE</button>
+        <button class="btn" id="water">WATER</button>
+        <button class="btn" id="grass">GRASS</button>
+    </div>
+
+<script src="elements-config.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
