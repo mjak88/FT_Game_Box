@@ -4,7 +4,7 @@ const ctx = canvas.getContext('2d');
 const scoreDisplay = document.getElementById('scoreDisplay');
 const timerDisplay = document.getElementById('timerDisplay');
 
-const GOOGLE_URL = "https://script.google.com/macros/s/1cGTCyrZ_MGVTdLLJN6KCOWXRJ6-TNomf-U9yiWqlREg/exec";
+const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbxHucKCCGnTlVtbDEAVQ0uoXVkOB4PE9Ax1a23RqoGaGKS3EL3TKGMlxzMuscolMiCi/exec";
 
 let score = 0, timeLeft = 30, gameActive = true, timerInterval, audioCtx = null, glowPulse = 0, stars = [];
 let crystals = [], spawnTimer = 0, spawnRate = 25;
