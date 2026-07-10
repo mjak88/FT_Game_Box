@@ -21,7 +21,7 @@ let gameInterval = null;
 let solutionPath = [];
 
 // Unified Backend Sync Webhook Configuration
-const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbxHucKCCGnTlVtbDEAVQ0uoXVkOB4PE9Ax1a23RqoGaGKS3EL3TKGMlxzMuscolMiCi/exec";
+const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbw13TamXZN6M7GkIoiHWKSLnNkzD2BCCPczrX04C9e0wRFJTMFuIaAUgZ-dx5g3sMkJtA/exec"; 
 
 function initMaze() {
     maze = [];
@@ -154,11 +154,11 @@ async function gameOver(isWin) {
     }
 
     // 2. Fetch active session identifiers
-    const couponCode = sessionStorage.getItem('active_coupon') || "TEST_MAZE";
+    const odooOrderId = sessionStorage.getItem('active_coupon') || "TEST_MAZE";
     const phone = sessionStorage.getItem('customer_phone') || "GUEST";
 
     // 3. Construct the clean GET payload URL string
-    const targetUrl = `${GOOGLE_URL}?action=recordWin&code=${encodeURIComponent(couponCode)}&prize=${encodeURIComponent(prizeWon)}&phone=${encodeURIComponent(phone)}`;
+    const targetUrl = `${GOOGLE_URL}?action=recordWin&code=${encodeURIComponent(odooOrderId)}&prize=${encodeURIComponent(prizeWon)}&phone=${encodeURIComponent(phone)}`;
 
     try {
         console.log("Transmitting burn request to backend via GET...");
