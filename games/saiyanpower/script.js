@@ -2,7 +2,7 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-const GOOGLE_URL = "https://script.google.com/macros/s/AKfycby18DI4Y6ReQPlTVq0O5El5IHxXc3GP0sg0vxUTtcOnPMCSSOwxUZhk1nU_jVeTvtgWkQ/exec";
+const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbxGLAXJpIhqPxxmMsoqhxD1aZHbIGslnuO4GSPRRKKylzdzEzs3ZeMaMVkoU1YyWNMBEw/exec";
 
 function playSound(type) {
     if (audioCtx.state === 'suspended') audioCtx.resume();
