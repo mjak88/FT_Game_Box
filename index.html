@@ -2,23 +2,37 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Crystal Game Hub</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            margin: 0; padding: 0; background-color: #000;
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; overflow: hidden;
+            touch-action: none; /* Block double-tap native browser zoom entirely */
+            -webkit-user-select: none; user-select: none;
+        }
+        .container {
+            text-align: center; width: 100%; max-width: 600px; padding: 40px;
+            cursor: pointer; box-sizing: border-box;
+        }
+        .logo { max-width: 180px; height: auto; margin-bottom: 20px; }
+        .glow-text { font-size: 3.5rem; letter-spacing: 3px; color: #fff; text-shadow: 0 0 20px rgba(0,255,255,0.6); margin: 10px 0; }
+    </style>
 </head>
 <body>
     <div class="container" onclick="startFreshSession()">
         <img src="https://lh3.googleusercontent.com/d/1sTDl0gvJl6z6ypAi7nsVdiRyTKgox_Wu" alt="Crystal Logo" class="logo">
         <h1 class="glow-text">WELCOME</h1>
-        <p>Tap anywhere to start your journey</p>
+        <p style="font-size: 1.3rem; color: #888;">Tap anywhere to start your journey</p>
     </div>
 
     <script>
         function startFreshSession() {
-            // Anti-Misuse: Clear out any previous player authentication flags entirely 
-            // right when a new customer approaches the tablet to start fresh.
             sessionStorage.removeItem('player_authenticated');
             sessionStorage.removeItem('active_coupon');
+            sessionStorage.removeItem('customer_phone');
             window.location.href = 'input.html';
         }
     </script>
