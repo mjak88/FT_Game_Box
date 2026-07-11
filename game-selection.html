@@ -16,18 +16,21 @@
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
             font-size: 0.85rem; font-weight: bold; color: #777; 
             transition: all 0.2s ease-in-out; box-sizing: border-box;
+            text-transform: uppercase;
         }
         .game-card .icon { font-size: 3rem; margin-bottom: 10px; filter: grayscale(100%); transition: 0.2s; }
         .game-card.active { border-color: #ff0055; background: #1a0b12; color: white; transform: scale(1.05); box-shadow: 0 0 20px rgba(255,0,85,0.3); }
         .game-card.active .icon { filter: grayscale(0%); }
         .game-card.winner { border-color: #00ff88; background: #0b1a12; color: white; transform: scale(1.1); box-shadow: 0 0 30px rgba(0,255,136,0.5); }
-        .game-card.winner .icon { filter: grayscale(0%); animation: bounce 0.5s infinite alternative; }
+        .game-card.winner .icon { filter: grayscale(0%); animation: bounce 0.5s infinite alternate; }
 
-        .action-btn { background: #ff0055; color: white; font-size: 1.4rem; font-weight: bold; padding: 16px 40px; border: none; border-radius: 10px; cursor: pointer; min-width: 250px; }
+        .action-btn { background: #ff0055; color: white; font-size: 1.4rem; font-weight: bold; padding: 16px 40px; border: none; border-radius: 10px; cursor: pointer; min-width: 250px; margin-top: 10px; }
         .action-btn:active { transform: scale(0.97); }
+        .action-btn:disabled { background: #333; color: #666; cursor: not-allowed; transform: none; }
 
         #reveal-zone { display: none; margin-top: 25px; background: #111116; padding: 30px; border-radius: 16px; border: 1px solid #222; width: 100%; max-width: 500px; box-sizing: border-box; }
         #launch-btn { background: #00ff88; color: black; font-size: 1.5rem; width: 100%; margin-top: 20px; }
+        #loading-msg { color: #00ffff; font-weight: bold; font-size: 1.2rem; margin: 20px; }
 
         @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-8px); } }
     </style>
@@ -36,12 +39,11 @@
 
     <div class="selection-layout">
         <h1 id="main-title" style="font-size: 2.2rem; color: white; margin-top: 20px; letter-spacing: 1px;">CHOOSE YOUR CHALLENGE</h1>
-        <p style="color: #666; margin-top: -10px; font-size: 1.1rem;">Tap select to discover your game matching ticket</p>
+        
+        <div id="loading-msg">🔍 Scanning GitHub Games Repository...</div>
+        <div class="game-carousel" id="carousel-track"></div>
 
-        <div class="game-carousel" id="carousel-track">
-            </div>
-
-        <button class="action-btn" id="trigger-action-btn" onclick="startSelectionProcess()">CHOOSE GAME</button>
+        <button class="action-btn" id="trigger-action-btn" onclick="startSelectionProcess()" disabled>LOADING ARENA...</button>
 
         <div id="reveal-zone">
             <h3 style="color: #00ff88; margin: 0; font-size: 0.9rem; letter-spacing: 2px;">MATCH ASSIGNED</h3>
@@ -53,21 +55,22 @@
     </div>
 
     <script>
-        // System Config Pools
-        const gamePool = [
-            { name: "CRYSTAL CATCHER", icon: "🏴‍☠️", file: "games/claw/index.html", desc: "Stretch your Gomu Gomu arm across the terminal grid to grab falling crystals before time runs out!" },
-            { name: "ELEMENTS ARCADE", icon: "🔥", file: "games/elements/index.html", desc: "Test your quick tactical reflexes against randomized elemental matrices. Match counters to unlock rewards!" },
-            { name: "MAZE ESCAPE", icon: "🧩", file: "games/maze/index.html", desc: "Navigate your cursor cleanly out of the dark brick labyrinth before your tablet timer hits zero!" }
-        ];
+        // Security Lockout check
+        if (sessionStorage.getItem('player_authenticated') !== 'true' || !sessionStorage.getItem('active_coupon')) {
+            window.location.href = "index.html";
+        }
 
-        // Synthesize Sound Layers via WebAudio API directly to avoid requiring external asset loads
+        // --- UPDATE THESE TWO VALUES TO MATCH YOUR ACCOUNT ---
+        const GITHUB_OWNER = "mjak88"; 
+        const GITHUB_REPO = "FT_Game_Box";
+        
+        let gamePool = [];
+        let currentActiveIdx = 0, speed = 80, cyclesRemaining = 0;
+
+        // Synth Sound Engine via WebAudio API
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const sounds = {
-            tick: { play: () => playTone(300, 0.05, 'triangle') },
-            win: { play: () => playTone(587.33, 0.15, 'sine', 0.1) }
-        };
-
-        function playTone(freq, duration, type, delay = 0) {
+        function playTone(freq, duration, type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.type = type;
@@ -76,25 +79,66 @@
             gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
             osc.connect(gain);
             gain.connect(audioCtx.destination);
-            osc.start(audioCtx.currentTime + delay);
-            osc.stop(audioCtx.currentTime + delay + duration);
-            return { catch: (cb) => {} };
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
         }
 
-        function initializeGenericGamesPool() {
+        // Scan Directory and Dynamically Import Modules
+        async function buildDynamicGamesPool() {
             const track = document.getElementById('carousel-track');
-            track.innerHTML = "";
-            gamePool.forEach((game, index) => {
-                track.innerHTML += `
-                    <div class="game-card" id="game-${index}">
-                        <div class="icon">${game.icon}</div>
-                        <div>${game.name}</div>
-                    </div>
-                `;
-            });
-        }
+            const loadingMsg = document.getElementById('loading-msg');
+            const actionBtn = document.getElementById('trigger-action-btn');
 
-        let currentActiveIdx = 0, speed = 100, cyclesRemaining = 0;
+            try {
+                // Fetch the subfolders metadata array from the GitHub content pointer API
+                const response = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/games`);
+                if (!response.ok) throw new Error("Failed to scan games directory asset path.");
+                
+                const items = await response.json();
+                
+                // Filter out everything except directories
+                const directories = items.filter(item => item.type === 'dir');
+
+                for (let dir of directories) {
+                    try {
+                        // Dynamically import the ES module from each subfolder config path
+                        const modulePath = `./games/${dir.name}/config.js`;
+                        const module = await import(modulePath);
+                        
+                        if (module.gameMetadata) {
+                            gamePool.push(module.gameMetadata);
+                        }
+                    } catch (configErr) {
+                        console.warn(`Skipped path folder "games/${dir.name}": Missing or non-valid config.js module format.`);
+                    }
+                }
+
+                if (gamePool.length === 0) {
+                    loadingMsg.innerText = "⚠️ No valid game folders found with a config.js file.";
+                    return;
+                }
+
+                // Render out Carousel Cards
+                loadingMsg.style.display = "none";
+                track.innerHTML = "";
+                gamePool.forEach((game, index) => {
+                    track.innerHTML += `
+                        <div class="game-card" id="game-${index}">
+                            <div class="icon">${game.icon}</div>
+                            <div>${game.name}</div>
+                        </div>
+                    `;
+                });
+
+                // Unlock interaction mechanics
+                actionBtn.innerText = "CHOOSE GAME";
+                actionBtn.disabled = false;
+
+            } catch (err) {
+                console.error(err);
+                loadingMsg.innerText = "❌ Connection error loading game directory from GitHub.";
+            }
+        }
 
         function startSelectionProcess() {
             if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -110,7 +154,7 @@
             currentActiveIdx = (currentActiveIdx + 1) % gamePool.length;
             document.getElementById(`game-${currentActiveIdx}`).classList.add('active');
             
-            sounds.tick.play();
+            playTone(300, 0.05, 'triangle');
             cyclesRemaining--;
 
             if (cyclesRemaining > 0) {
@@ -126,7 +170,7 @@
             document.querySelectorAll('.game-card').forEach(card => card.classList.remove('active'));
             document.getElementById(`game-${winningIndex}`).classList.add('winner');
 
-            sounds.win.play();
+            playTone(587.33, 0.25, 'sine');
             const selectedGame = gamePool[winningIndex];
 
             document.getElementById('main-title').innerText = "YOUR MATCH IS READY!";
@@ -143,7 +187,7 @@
             revealZone.scrollIntoView({ behavior: 'smooth' });
         }
 
-        window.addEventListener('DOMContentLoaded', initializeGenericGamesPool);
+        window.addEventListener('DOMContentLoaded', buildDynamicGamesPool);
     </script>
 </body>
 </html>
