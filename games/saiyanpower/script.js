@@ -42,6 +42,19 @@ function playSound(type) {
         osc.frequency.setValueAtTime(150, audioCtx.currentTime);
         gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
     }
+    else if (type === 'crystal_spawn') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.6);
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    }
+    else if (type === 'shatter') {
+        // High frequency white-noise blast simulation
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+        osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.3);
+        gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+    }
     
     gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
     osc.start(); 
@@ -58,6 +71,18 @@ let particles = [];
 let screenShake = 0;
 let frameCount = 0;
 let gameLoopActive = true;
+
+// Dynamic Ending Reward Properties
+let rewardPayload = { loaded: false, tier: "Bronze", prize: "Connecting...", color: "#cd7f32" };
+let crystalProps = { x: 450, y: 200, w: 70, h: 110, broken: false, scale: 0, opacity: 1, pulse: 0 };
+let crystalShards = [];
+
+const tierConfig = {
+    'Ruby': { color: '#ff0055', glow: 'rgba(255, 0, 85, 0.8)' },
+    'Gold': { color: '#ffd700', glow: 'rgba(255, 215, 0, 0.8)' },
+    'Silver': { color: '#b0c4de', glow: 'rgba(176, 196, 222, 0.8)' },
+    'Bronze': { color: '#cd7f32', glow: 'rgba(205, 127, 50, 0.8)' }
+};
 
 // Intro Story Script Properties
 const introLines = [
@@ -107,20 +132,32 @@ function createParticles(x, y, color) {
     }
 }
 
+function generateCrystalShards(cx, cy, color) {
+    for (let i = 0; i < 40; i++) {
+        crystalShards.push({
+            x: cx,
+            y: cy,
+            vx: (Math.random() - 0.5) * 18,
+            vy: (Math.random() - 0.6) * 16 - 4,
+            size: Math.random() * 12 + 6,
+            angle: Math.random() * Math.PI * 2,
+            spin: (Math.random() - 0.5) * 0.3,
+            life: 60,
+            color: color
+        });
+    }
+}
+
 // Balanced AI Single Shot Logic Engine
 function triggerRandomAIShot() {
     if (gameState !== 'battle') return;
 
     const elements = ['Fire', 'Water', 'Grass'];
-    
-    // Difficulty Level calculated cleanly for every 10 points
     let levelTier = Math.max(0, Math.floor(score / 10));
     
-    // Base Shooting Delay dynamically scales down as points climb up
     let baseMinDelay = Math.max(450, 1200 - (levelTier * 180));
     let baseMaxDelay = Math.max(900, 2500 - (levelTier * 300));
 
-    // Choose exactly ONE random elemental type (Fair Single Shot Mode)
     let chosenType = elements[Math.floor(Math.random() * elements.length)];
     let randomSpeed = 4.5 + Math.random() * 4.0 + (levelTier * 0.6); 
 
@@ -133,7 +170,6 @@ function triggerRandomAIShot() {
 
     playSound('shoot');
 
-    // Recursively queue the next single attack frame interval
     const randomNextDelay = baseMinDelay + Math.random() * (baseMaxDelay - baseMinDelay);
     setTimeout(triggerRandomAIShot, randomNextDelay);
 }
@@ -308,6 +344,63 @@ function handleIntroTap() {
     }
 }
 
+function handleEndGameInteraction(e) {
+    if (gameState !== 'ended' || crystalProps.broken || crystalProps.scale < 0.9) return;
+
+    // Canvas click coordination calculations
+    const rect = canvas.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const clickY = e.clientY - rect.top;
+
+    // Distance threshold check
+    const dx = clickX - crystalProps.x;
+    const dy = clickY - crystalProps.y;
+    
+    if (Math.abs(dx) < crystalProps.w && Math.abs(dy) < crystalProps.h) {
+        // Execute shatter sequence
+        crystalProps.broken = true;
+        screenShake = 30;
+        playSound('shatter');
+        generateCrystalShards(crystalProps.x, crystalProps.y, rewardPayload.color);
+    }
+}
+
+function drawCrystal(x, y, baseColor, accentColorPool) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(crystalProps.scale, crystalProps.scale);
+    
+    // Floating movement modifiers
+    crystalProps.pulse += 0.05;
+    let floatOffset = Math.sin(crystalProps.pulse) * 12;
+    ctx.translate(0, floatOffset);
+
+    // Glowing setup
+    ctx.shadowBlur = 25 + Math.sin(crystalProps.pulse * 2) * 8;
+    ctx.shadowColor = accentColorPool;
+
+    ctx.fillStyle = baseColor;
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#ffffff';
+
+    // Face facets vectors assembly
+    // Center point (0, 0) relative to matrix transform
+    // Top spike
+    ctx.beginPath(); ctx.moveTo(0, -55); ctx.lineTo(-30, -15); ctx.lineTo(0, 0); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, -55); ctx.lineTo(30, -15); ctx.lineTo(0, 0); ctx.closePath(); ctx.fill(); ctx.stroke();
+    
+    // Bottom spike
+    ctx.beginPath(); ctx.moveTo(0, 55); ctx.lineTo(-30, 15); ctx.lineTo(0, 0); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, 55); ctx.lineTo(30, 15); ctx.lineTo(0, 0); ctx.closePath(); ctx.fill(); ctx.stroke();
+
+    // Side reflections facets overlays
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+    ctx.beginPath(); ctx.moveTo(0, -55); ctx.lineTo(0, 0); ctx.lineTo(30, -15); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(0, 55); ctx.lineTo(0, 0); ctx.lineTo(-30, 15); ctx.closePath(); ctx.fill();
+
+    ctx.restore();
+}
+
 function update() {
     if (!gameLoopActive) return;
     frameCount++;
@@ -321,8 +414,11 @@ function update() {
     }
 
     drawBackground();
-    drawFighter(fighterAI, false);
-    drawFighter(fighterPlayer, true);
+
+    if (gameState !== 'ended') {
+        drawFighter(fighterAI, false);
+        drawFighter(fighterPlayer, true);
+    }
 
     if (gameState === 'intro') {
         drawIntroCinematics();
@@ -354,14 +450,11 @@ function update() {
         }
     } 
     else if (gameState === 'battle') {
-        
-        // Handle incoming AI projectiles safely
         for (let i = enemies.length - 1; i >= 0; i--) {
             let enemyWave = enemies[i];
             drawEnergyWave(enemyWave, false);
             enemyWave.x += enemyWave.speed;
             
-            // AI wave breaks through player shield zone
             if (enemyWave.x > canvas.width - 120) {
                 score--;
                 screenShake = 14;
@@ -372,7 +465,6 @@ function update() {
                 continue;
             }
 
-            // Test intersection with the player's active counter-wave
             if (playerProj && Math.abs(enemyWave.x - playerProj.x) < 30) {
                 const midPointX = (enemyWave.x + playerProj.x) / 2;
                 const midPointY = (enemyWave.y + playerProj.y) / 2;
@@ -384,26 +476,21 @@ function update() {
                 if ((playerProj.type === 'Water' && enemyWave.type === 'Fire') || 
                     (playerProj.type === 'Grass' && enemyWave.type === 'Water') || 
                     (playerProj.type === 'Fire' && enemyWave.type === 'Grass')) {
-                    // Player element wins: destroys this wave, player shot survives!
                     enemies.splice(i, 1);
                 } else if (playerProj.type === enemyWave.type) { 
-                    // Equal elements perfectly neutralize each other
                     playSound('draw');
                     enemies.splice(i, 1);
                     playerProj = null;
                 } else {
-                    // AI element wins: player projectile breaks instantly
                     playerProj = null; 
                 }
             }
         }
 
-        // Handle player projectile updates
         if (playerProj) {
             drawEnergyWave(playerProj, true);
             playerProj.x -= playerProj.speed;
             
-            // Player wave hits the AI successfully
             if (playerProj.x < 120) {
                 score++;
                 screenShake = 14;
@@ -414,8 +501,70 @@ function update() {
             }
         }
     }
+    else if (gameState === 'ended') {
+        // Dark screen cover backdrop overlay layer setup
+        ctx.fillStyle = 'rgba(5, 3, 10, 0.9)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Process background animation particles
+        if (!crystalProps.broken) {
+            // Animate Crystal Grow Spawn Scale Factor Inwardly
+            if (crystalProps.scale < 1) crystalProps.scale += 0.04;
+
+            drawCrystal(crystalProps.x, crystalProps.y, rewardPayload.color, tierConfig[rewardPayload.tier].glow);
+
+            // Floating Instructions Typography layout overlay elements
+            ctx.font = 'bold 2rem Impact';
+            ctx.fillStyle = '#ffffff';
+            ctx.textAlign = 'center';
+            ctx.fillText(`YOU UNLOCKED A ${rewardPayload.tier.toUpperCase()} CHEST!`, canvas.width / 2, 70);
+            
+            ctx.font = '1.3rem Arial';
+            ctx.fillStyle = rewardPayload.color;
+            ctx.fillText("TAP CRYSTAL TO SHATTER & CLAIM PRIZE", canvas.width / 2, 340);
+        } else {
+            // Process Fragment Vector Physics Loops
+            crystalShards.forEach((s, idx) => {
+                s.x += s.vx;
+                s.y += s.vy;
+                s.vy += 0.3; // Gravity pull vector element adjustment
+                s.angle += s.spin;
+                s.life--;
+
+                ctx.save();
+                ctx.translate(s.x, s.y);
+                ctx.rotate(s.angle);
+                ctx.fillStyle = s.color;
+                ctx.globalAlpha = s.life / 60;
+                
+                // Draw geometric shard shards polygons arrays manually
+                ctx.beginPath();
+                ctx.moveTo(0, -s.size/2);
+                ctx.lineTo(s.size/2, s.size/2);
+                ctx.lineTo(-s.size/2, s.size/2);
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+
+                if (s.life <= 0) crystalShards.splice(idx, 1);
+            });
+
+            // Reveal Dynamic Text Rewards Banner Details
+            ctx.globalAlpha = 1.0;
+            ctx.font = 'bold 3rem Impact';
+            ctx.fillStyle = '#ffd700';
+            ctx.textAlign = 'center';
+            ctx.fillText("REWARD UNLOCKED", canvas.width / 2, canvas.height / 2 - 40);
+
+            ctx.font = 'bold 2.2rem sans-serif';
+            ctx.fillStyle = '#00ff88';
+            ctx.fillText(rewardPayload.prize, canvas.width / 2, canvas.height / 2 + 30);
+
+            ctx.font = '1rem Arial';
+            ctx.fillStyle = '#888';
+            ctx.fillText("Show this terminal voucher window to the cashier to redeem your treat!", canvas.width / 2, canvas.height / 2 + 80);
+        }
+    }
+
     particles.forEach((p, i) => {
         p.x += p.vx; 
         p.y += p.vy; 
@@ -449,24 +598,35 @@ function startCombatTimerClock() {
 
 function terminateMatrixGame() {
     gameState = 'ended';
-    gameLoopActive = false;
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    playSound('crystal_spawn');
     
-    ctx.font = 'bold 3.5rem Impact';
-    ctx.fillStyle = '#ff4500';
-    ctx.textAlign = 'center';
-    ctx.fillText("BATTLE CONCLUDED", canvas.width / 2, canvas.height / 2 - 20);
+    // Predetermine client local validation tier safely before request handles compile
+    let calculatedTier = "Bronze";
+    if (score > 40) calculatedTier = "Ruby";
+    else if (score > 30) calculatedTier = "Gold";
+    else if (score > 25) calculatedTier = "Silver";
     
-    ctx.font = '2rem Arial';
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText(`Final Power Rating: ${score} Points`, canvas.width / 2, canvas.height / 2 + 35);
+    rewardPayload.tier = calculatedTier;
+    rewardPayload.color = tierConfig[calculatedTier].color;
     
     if (typeof GOOGLE_URL !== 'undefined') {
         const activeCoupon = sessionStorage.getItem('active_coupon') || "BYPASS";
         const phone = sessionStorage.getItem('customer_phone') || "UNKNOWN";
-        fetch(`${GOOGLE_URL}?action=recordWin&code=${encodeURIComponent(activeCoupon)}&phone=${encodeURIComponent(phone)}&prize=${encodeURIComponent(score + ' Points Battle')}`)
-        .catch(err => console.log("Cloud Save Incomplete"));
+        
+        // Dynamic fetch routing mapping score directly
+        fetch(`${GOOGLE_URL}?action=recordWin&code=${encodeURIComponent(activeCoupon)}&phone=${encodeURIComponent(phone)}&score=${score}`)
+        .then(res => res.json())
+        .then(data => {
+            if(data.status === "SUCCESS") {
+                rewardPayload.prize = data.prize.toUpperCase();
+                rewardPayload.loaded = true;
+            }
+        })
+        .catch(err => {
+            console.log("Cloud Connection Dropped:", err);
+            rewardPayload.prize = `${calculatedTier.toUpperCase()} REWARD BACKPACK`;
+            rewardPayload.loaded = true;
+        });
     }
 }
 
@@ -475,6 +635,16 @@ document.getElementById('fire').addEventListener('click', () => handleInput('Fir
 document.getElementById('water').addEventListener('click', () => handleInput('Water'));
 document.getElementById('grass').addEventListener('click', () => handleInput('Grass'));
 
-canvas.addEventListener('click', handleIntroTap);
+// Uniform mouse and touch inputs registration handlers logic block
+canvas.addEventListener('click', (e) => {
+    handleIntroTap();
+    handleEndGameInteraction(e);
+});
+canvas.addEventListener('touchstart', (e) => {
+    handleIntroTap();
+    if(e.touches && e.touches[0]) {
+        handleEndGameInteraction(e.touches[0]);
+    }
+});
 
 update();
