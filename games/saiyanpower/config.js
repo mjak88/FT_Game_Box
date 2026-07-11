@@ -1,8 +1,8 @@
 /**
  * Game Box Hub Core Metadata Configuration
- * This object is read by the main game selection carousel.
+ * This object is read dynamically by the main game selection carousel via ES Modules.
  */
-window.gameMetadata = {
+export const gameMetadata = {
     name: "SAIYAN POWER",
     icon: "🔥",
     file: "games/saiyanpower/index.html",
