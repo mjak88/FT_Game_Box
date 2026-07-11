@@ -2,173 +2,148 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Game Selection Arena</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        .selection-layout { display: flex; flex-direction: column; align-items: center; width: 90%; max-width: 800px; gap: 20px; margin: auto; }
-        .game-carousel { display: flex; justify-content: center; gap: 15px; width: 100%; margin: 20px 0; overflow: hidden; padding: 10px; }
+        body { background: #07070a; color: white; font-family: system-ui, sans-serif; margin: 0; padding: 20px; text-align: center; }
+        .selection-layout { display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 900px; gap: 20px; margin: auto; }
+        .game-carousel { display: flex; justify-content: center; gap: 20px; width: 100%; margin: 20px 0; padding: 10px; box-sizing: border-box; }
+        
         .game-card { 
-    width: 140px;          /* Slightly widened from 120px */
-    height: 170px;         /* Slightly increased height */
-    background: #111; 
-    border: 2px solid #333; 
-    border-radius: 12px; 
-    display: flex; 
-    flex-direction: column; 
-    align-items: center; 
-    justify-content: center; 
-    font-size: 0.75rem;    /* Made text slightly smaller to fit perfectly */
-    font-weight: bold; 
-    color: #888; 
-    transition: all 0.2s ease-in-out; 
-    text-transform: uppercase;
-}
-        .game-card .icon { font-size: 3rem; margin-bottom: 10px; }
-        .game-card.active { border-color: #FF0000; color: #fff; background: #200; transform: scale(1.1); box-shadow: 0 0 15px #FF0000; }
-        .game-card.winner { border-color: #00ff88; color: #fff; background: #021; transform: scale(1.15); box-shadow: 0 0 25px #00ff88; animation: bounce 0.4s infinite alternate; }
-        #reveal-zone { display: none; background: #111; border: 3px solid #00ff88; border-radius: 15px; padding: 25px; width: 100%; max-width: 450px; box-shadow: 0 0 20px rgba(0, 255, 136, 0.2); margin-top: 15px; }
-        .btn-launch { display: block; width: 100%; margin-top: 20px; padding: 15px; background: #00ff88; color: #000; font-weight: bold; font-size: 1.2rem; border: none; border-radius: 8px; cursor: pointer; text-transform: uppercase; }
-        @keyframes bounce { from { transform: scale(1.1); } to { transform: scale(1.15); } }
-        #loading-msg { color: cyan; font-weight: bold; font-size: 1.2rem; margin: 20px; }
+            width: 160px; height: 190px; background: #111116; 
+            border: 2px solid #222; border-radius: 14px; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            font-size: 0.85rem; font-weight: bold; color: #777; 
+            transition: all 0.2s ease-in-out; box-sizing: border-box;
+        }
+        .game-card .icon { font-size: 3rem; margin-bottom: 10px; filter: grayscale(100%); transition: 0.2s; }
+        .game-card.active { border-color: #ff0055; background: #1a0b12; color: white; transform: scale(1.05); box-shadow: 0 0 20px rgba(255,0,85,0.3); }
+        .game-card.active .icon { filter: grayscale(0%); }
+        .game-card.winner { border-color: #00ff88; background: #0b1a12; color: white; transform: scale(1.1); box-shadow: 0 0 30px rgba(0,255,136,0.5); }
+        .game-card.winner .icon { filter: grayscale(0%); animation: bounce 0.5s infinite alternative; }
+
+        .action-btn { background: #ff0055; color: white; font-size: 1.4rem; font-weight: bold; padding: 16px 40px; border: none; border-radius: 10px; cursor: pointer; min-width: 250px; }
+        .action-btn:active { transform: scale(0.97); }
+
+        #reveal-zone { display: none; margin-top: 25px; background: #111116; padding: 30px; border-radius: 16px; border: 1px solid #222; width: 100%; max-width: 500px; box-sizing: border-box; }
+        #launch-btn { background: #00ff88; color: black; font-size: 1.5rem; width: 100%; margin-top: 20px; }
+
+        @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-8px); } }
     </style>
 </head>
-<body style="overflow-y: auto;">
+<body>
 
-<div class="selection-layout">
-    <h1 class="glow-text" id="main-title">LOADING GAMES ARENA...</h1>
-    
-    <div id="loading-msg">Scanning registry and mounting files...</div>
-    
-    <div class="game-carousel" id="carousel"></div>
+    <div class="selection-layout">
+        <h1 id="main-title" style="font-size: 2.2rem; color: white; margin-top: 20px; letter-spacing: 1px;">CHOOSE YOUR CHALLENGE</h1>
+        <p style="color: #666; margin-top: -10px; font-size: 1.1rem;">Tap select to discover your game matching ticket</p>
 
-    <div id="reveal-zone">
-        <h2 id="winner-title" style="color: #00ff88; margin: 0 0 10px 0; font-size: 2rem; letter-spacing: 1px;">GAME NAME</h2>
-        <div id="winner-visual" style="font-size: 5rem; margin: 15px 0;">🎮</div>
-        
-        <div style="border-top: 1px dashed #333; padding-top: 15px; margin-top: 15px;">
-            <h3 style="color: #fff; margin: 0 0 5px 0; font-size: 1.1rem;">HOW TO PLAY:</h3>
-            <p id="winner-desc" style="color: #bbb; margin: 0; font-size: 0.95rem; line-height: 1.4;"></p>
-        </div>
-        
-        <button id="launch-btn" class="btn-launch">START GAME</button>
-    </div>
-</div>
-
-<script src="games-manifest.js"></script>
-
-<script>
-    // Security Access Lockdown
-    if (sessionStorage.getItem('player_authenticated') !== 'true' || !sessionStorage.getItem('active_coupon')) {
-        window.location.href = "index.html";
-    }
-
-    const gamePool = [];
-    let currentIndex = 0;
-    let speed = 80; 
-    let cyclesRemaining = 22; 
-
-    const sounds = {
-        tick: new Audio('https://assets.mixkit.co/active_storage/sfx/2007/2007-preview.mp3'),
-        win: new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3')
-    };
-    sounds.tick.volume = 0.4;
-
-    // Helper to dynamically inject script tags to read metadata properties asynchronously
-    function loadScriptAsync(src) {
-        return new Promise((resolve, reject) => {
-            const script = document.createElement('script');
-            script.src = src;
-            script.onload = () => resolve();
-            script.onerror = () => reject();
-            document.head.appendChild(script);
-        });
-    }
-
-    // Generic Scan Engine Initialization
-    async function initializeGenericGamesPool() {
-        const carousel = document.getElementById('carousel');
-        
-        if (typeof ACTIVE_GAMES_MANIFEST === 'undefined' || ACTIVE_GAMES_MANIFEST.length === 0) {
-            document.getElementById('loading-msg').innerText = "CRITICAL ERROR: No games found in manifest.";
-            return;
-        }
-
-        try {
-            // Loop through manifest array string pointers
-            for (let i = 0; i < ACTIVE_GAMES_MANIFEST.length; i++) {
-                const folderName = ACTIVE_GAMES_MANIFEST[i];
-                // Read local config parameters file
-                await loadScriptAsync(`games/${folderName}/${folderName}-config.js`);
-                
-                if (window.gameMetadata) {
-                    gamePool.push({...window.gameMetadata});
-                    
-                    // Automatically append clean carousel game cards into live DOM structure layout
-                    carousel.innerHTML += `
-<div class="game-card" id="game-${i}">
-                <span class="icon">${window.gameMetadata.icon}</span>
-                <div style="padding: 0 5px; text-align: center;">${window.gameMetadata.name}</div>
+        <div class="game-carousel" id="carousel-track">
             </div>
-        `;
-                    
-                    // Clear window level cache footprint cleanly for subsequent loops
-                    window.gameMetadata = null;
-                }
-            }
-            
-            // Clean interface assets and trigger animation cycles loops
-            document.getElementById('loading-msg').style.display = 'none';
-            document.getElementById('main-title').innerText = "SELECTING YOUR GAME...";
-            setTimeout(cycleAnimation, 500);
 
-        } catch (error) {
-            document.getElementById('loading-msg').innerText = "ERROR LOADING GAME ASSETS OR MISSING CONFIG FILES.";
-            console.error(error);
-        }
-    }
+        <button class="action-btn" id="trigger-action-btn" onclick="startSelectionProcess()">CHOOSE GAME</button>
 
-    function cycleAnimation() {
-        document.querySelectorAll('.game-card').forEach(card => card.classList.remove('active'));
-        currentIndex = (currentIndex + 1) % gamePool.length;
-        document.getElementById(`game-${currentIndex}`).classList.add('active');
-        
-        sounds.tick.currentTime = 0;
-        sounds.tick.play().catch(() => {});
-        cyclesRemaining--;
+        <div id="reveal-zone">
+            <h3 style="color: #00ff88; margin: 0; font-size: 0.9rem; letter-spacing: 2px;">MATCH ASSIGNED</h3>
+            <h1 id="winner-title" style="font-size: 2.2rem; margin: 10px 0;">---</h1>
+            <div id="winner-visual" style="font-size: 4.5rem; margin: 15px 0;">🎮</div>
+            <p id="winner-desc" style="color: #aaa; font-size: 1.1rem; line-height: 1.5; padding: 0 10px;">---</p>
+            <button class="action-btn" id="launch-btn">START MATCH</button>
+        </div>
+    </div>
 
-        if (cyclesRemaining > 0) {
-            if (cyclesRemaining < 6) speed += 70;
-            setTimeout(cycleAnimation, speed);
-        } else {
-            finalizeSelection();
-        }
-    }
+    <script>
+        // System Config Pools
+        const gamePool = [
+            { name: "CRYSTAL CATCHER", icon: "🏴‍☠️", file: "games/claw/index.html", desc: "Stretch your Gomu Gomu arm across the terminal grid to grab falling crystals before time runs out!" },
+            { name: "ELEMENTS ARCADE", icon: "🔥", file: "games/matrix/index.html", desc: "Test your quick tactical reflexes against randomized elemental matrices. Match counters to unlock rewards!" },
+            { name: "MAZE ESCAPE", icon: "🧩", file: "games/maze/index.html", desc: "Navigate your cursor cleanly out of the dark brick labyrinth before your tablet timer hits zero!" }
+        ];
 
-    function finalizeSelection() {
-        const winningIndex = Math.floor(Math.random() * gamePool.length);
-        document.querySelectorAll('.game-card').forEach(card => card.classList.remove('active'));
-        document.getElementById(`game-${winningIndex}`).classList.add('winner');
-
-        sounds.win.play().catch(() => {});
-        const selectedGame = gamePool[winningIndex];
-
-        document.getElementById('main-title').innerText = "YOUR MATCH IS READY!";
-        document.getElementById('winner-title').innerText = selectedGame.name;
-        document.getElementById('winner-visual').innerText = selectedGame.icon;
-        document.getElementById('winner-desc').innerText = selectedGame.desc;
-        
-        document.getElementById('launch-btn').onclick = function() {
-            window.location.href = selectedGame.file;
+        // Synthesize Sound Layers via WebAudio API directly to avoid requiring external asset loads
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const sounds = {
+            tick: { play: () => playTone(300, 0.05, 'triangle') },
+            win: { play: () => playTone(587.33, 0.15, 'sine', 0.1) }
         };
 
-        document.getElementById('reveal-zone').style.display = "block";
-        document.getElementById('reveal-zone').scrollIntoView({ behavior: 'smooth' });
-    }
+        function playTone(freq, duration, type, delay = 0) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(audioCtx.currentTime + delay);
+            osc.stop(audioCtx.currentTime + delay + duration);
+            return { catch: (cb) => {} };
+        }
 
-    window.addEventListener('DOMContentLoaded', () => {
-        initializeGenericGamesPool();
-    });
-</script>
+        function initializeGenericGamesPool() {
+            const track = document.getElementById('carousel-track');
+            track.innerHTML = "";
+            gamePool.forEach((game, index) => {
+                track.innerHTML += `
+                    <div class="game-card" id="game-${index}">
+                        <div class="icon">${game.icon}</div>
+                        <div>${game.name}</div>
+                    </div>
+                `;
+            });
+        }
+
+        let currentActiveIdx = 0, speed = 100, cyclesRemaining = 0;
+
+        function startSelectionProcess() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            document.getElementById('trigger-action-btn').style.display = "none";
+            document.getElementById('reveal-zone').style.display = "none";
+            cyclesRemaining = 15 + Math.floor(Math.random() * 8);
+            speed = 80;
+            cycleAnimation();
+        }
+
+        function cycleAnimation() {
+            document.querySelectorAll('.game-card').forEach(card => card.classList.remove('active'));
+            currentActiveIdx = (currentActiveIdx + 1) % gamePool.length;
+            document.getElementById(`game-${currentActiveIdx}`).classList.add('active');
+            
+            sounds.tick.play();
+            cyclesRemaining--;
+
+            if (cyclesRemaining > 0) {
+                if (cyclesRemaining < 6) speed += 60;
+                setTimeout(cycleAnimation, speed);
+            } else {
+                finalizeSelection();
+            }
+        }
+
+        function finalizeSelection() {
+            const winningIndex = Math.floor(Math.random() * gamePool.length);
+            document.querySelectorAll('.game-card').forEach(card => card.classList.remove('active'));
+            document.getElementById(`game-${winningIndex}`).classList.add('winner');
+
+            sounds.win.play();
+            const selectedGame = gamePool[winningIndex];
+
+            document.getElementById('main-title').innerText = "YOUR MATCH IS READY!";
+            document.getElementById('winner-title').innerText = selectedGame.name;
+            document.getElementById('winner-visual').innerText = selectedGame.icon;
+            document.getElementById('winner-desc').innerText = selectedGame.desc;
+            
+            document.getElementById('launch-btn').onclick = function() {
+                window.location.href = selectedGame.file;
+            };
+
+            const revealZone = document.getElementById('reveal-zone');
+            revealZone.style.display = "block";
+            revealZone.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        window.addEventListener('DOMContentLoaded', initializeGenericGamesPool);
+    </script>
 </body>
 </html>
