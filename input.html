@@ -3,98 +3,289 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Crystal Check-in</title>
+    <title>Crystal Game Hub - Battle Check-in</title>
     <link rel="stylesheet" href="style.css">
     <style>
         body {
-            background: #0a0a0f; color: white; text-align: center;
-            font-family: system-ui, sans-serif; margin: 0; padding: 0;
-            display: flex; justify-content: center; align-items: center; height: 100vh;
+            background: #060609;
+            color: white;
+            font-family: 'Impact', 'Arial Black', sans-serif;
+            margin: 0;
+            padding: 10px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-sizing: border-box;
         }
-        .input-container {
-            display: flex; flex-direction: column; gap: 20px;
-            width: 85%; max-width: 460px; margin: auto;
-            background: #111116; padding: 40px 30px; border-radius: 16px;
-            border: 2px solid #222; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+
+        .arena-container {
+            width: 100%;
+            max-width: 850px;
+            background: linear-gradient(180deg, rgba(16, 12, 30, 0.95), rgba(5, 5, 10, 0.98));
+            border: 3px solid #ff0055;
+            border-radius: 20px;
+            padding: 30px 20px;
+            box-shadow: 0 0 35px rgba(255, 0, 85, 0.25);
+            text-align: center;
+            box-sizing: border-box;
         }
-        label { text-align: left; font-size: 0.9rem; color: #aaa; font-weight: bold; margin-bottom: -12px; letter-spacing: 0.5px; }
+
+        .showcase-title {
+            font-size: 2.2rem;
+            color: #fff;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 0 0 5px 0;
+            text-shadow: 0 0 10px rgba(255,255,255,0.4);
+        }
+
+        .showcase-subtitle {
+            font-family: system-ui, sans-serif;
+            font-size: 1rem;
+            color: #888;
+            margin: 0 0 30px 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* --- CRYSTAL TIER CARDS GRID --- */
+        .tier-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 15px;
+            margin-bottom: 35px;
+            width: 100%;
+        }
+
+        .tier-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 2px solid #222;
+            border-radius: 16px;
+            padding: 20px 10px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Geometric Pure CSS Crystal Art Vectors */
+        .crystal-shape {
+            width: 40px;
+            height: 60px;
+            margin-bottom: 15px;
+            position: relative;
+            filter: drop-shadow(0 0 12px currentColor);
+        }
+        .crystal-shape::before, .crystal-shape::after {
+            content: "";
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+        }
+        .crystal-shape::before {
+            top: 0;
+            border-bottom: 30px solid currentColor;
+        }
+        .crystal-shape::after {
+            bottom: 0;
+            border-top: 30px solid currentColor;
+            opacity: 0.8;
+        }
+
+        /* Tier Styling Contexts */
+        .tier-bronze { color: #cd7f32; border-color: rgba(205, 127, 50, 0.3); }
+        .tier-bronze:hover { box-shadow: 0 0 20px rgba(205, 127, 50, 0.4); border-color: #cd7f32; transform: translateY(-5px); }
+
+        .tier-silver { color: #b0c4de; border-color: rgba(176, 196, 222, 0.3); }
+        .tier-silver:hover { box-shadow: 0 0 20px rgba(176, 196, 222, 0.5); border-color: #b0c4de; transform: translateY(-5px); }
+
+        .tier-gold { color: #ffd700; border-color: rgba(255, 215, 0, 0.3); }
+        .tier-gold:hover { box-shadow: 0 0 25px rgba(255, 215, 0, 0.6); border-color: #ffd700; transform: translateY(-5px); }
+
+        .tier-ruby { color: #ff0055; border-color: rgba(255, 0, 85, 0.3); }
+        .tier-ruby:hover { box-shadow: 0 0 30px rgba(255, 0, 85, 0.7); border-color: #ff0055; transform: translateY(-5px); }
+
+        .tier-name {
+            font-size: 1.4rem;
+            letter-spacing: 1px;
+            margin: 5px 0;
+            color: #fff;
+        }
+
+        .tier-condition {
+            font-family: system-ui, sans-serif;
+            font-size: 0.8rem;
+            color: #aaa;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 4px 10px;
+            border-radius: 20px;
+            margin-top: 5px;
+            font-weight: bold;
+        }
+
+        /* --- INPUT GATE INTERACTION UI --- */
+        .gate-inputs {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            max-width: 420px;
+            margin: 0 auto;
+        }
+
+        .gate-inputs h3 {
+            margin: 10px 0 0 0;
+            font-size: 1.3rem;
+            letter-spacing: 1.5px;
+            color: #ff0055;
+        }
+
         input {
-            padding: 18px; font-size: 1.4rem; background: #1a1a24;
-            border: 2px solid #333; color: white; border-radius: 10px;
-            text-align: center; width: 100%; box-sizing: border-box; transition: 0.2s;
+            padding: 16px;
+            font-size: 1.2rem;
+            background: #000;
+            border: 2px solid #333;
+            color: white;
+            border-radius: 10px;
+            text-align: center;
+            font-family: monospace;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
         }
-        input:focus { border-color: #ff0055; outline: none; background: #222230; }
+        input:focus {
+            border-color: #ff0055;
+            outline: none;
+            box-shadow: 0 0 10px rgba(255, 0, 85, 0.2);
+        }
+
         button {
-            padding: 18px; font-size: 1.3rem; background: #ff0055;
-            color: white; border: none; border-radius: 10px;
-            cursor: pointer; font-weight: bold; width: 100%; transition: 0.2s;
+            padding: 16px;
+            font-size: 1.3rem;
+            font-family: 'Impact', sans-serif;
+            letter-spacing: 1.5px;
+            background: #ff0055;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #990033;
+            transition: all 0.1s ease-in-out;
         }
-        button:active { transform: scale(0.98); background: #cc0044; }
-        button:disabled { background: #444; color: #888; cursor: not-allowed; transform: none; }
-        .error-message { color: #ff0055; font-weight: bold; min-height: 24px; font-size: 1rem; margin-top: -5px; }
+        button:active {
+            transform: translateY(3px);
+            box-shadow: 0 1px 0 #990033;
+        }
+        button:disabled {
+            background: #444;
+            color: #777;
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .error-message {
+            color: #ff0055;
+            font-family: system-ui, sans-serif;
+            font-weight: bold;
+            font-size: 0.95rem;
+            min-height: 22px;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
 
-<div class="input-container">
-    <h2 style="color: #ff0055; margin: 0 0 10px 0; font-size: 2rem; letter-spacing: 1px;">ENTER DETAILS</h2>
-    
-    <label for="phone_input">CUSTOMER PHONE NUMBER</label>
-    <input type="tel" id="phone_input" placeholder="01XXXXXXXXX" autocomplete="off" inputmode="tel">
-    
-    <label for="order_input">ODOO ORDER ID</label>
-    <input type="text" id="order_input" placeholder="Scan or Enter Order ID" autocomplete="off" style="text-transform: uppercase;">
-    
-    <div id="check-error" class="error-message"></div>
-    
-    <button id="next-btn" onclick="validateOrder()">NEXT</button>
-</div>
+    <div class="arena-container">
+        <h1 class="showcase-title">CRYSTAL TREASURE VAULT</h1>
+        <p class="showcase-subtitle">Score higher in your assigned game match to unlock rare mystery gifts!</p>
 
-<script>
-    const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbxGLAXJpIhqPxxmMsoqhxD1aZHbIGslnuO4GSPRRKKylzdzEzs3ZeMaMVkoU1YyWNMBEw/exec";
+        <div class="tier-grid">
+            <div class="tier-card tier-bronze">
+                <div class="crystal-shape"></div>
+                <div class="tier-name">BRONZE</div>
+                <div class="tier-condition">SCORE &gt; 20</div>
+            </div>
 
-    async function validateOrder() {
-        const phone = document.getElementById('phone_input').value.trim();
-        const orderId = document.getElementById('order_input').value.trim().toUpperCase();
-        const nextBtn = document.getElementById('next-btn');
-        const errorMsg = document.getElementById('check-error');
+            <div class="tier-card tier-silver">
+                <div class="crystal-shape"></div>
+                <div class="tier-name">SILVER</div>
+                <div class="tier-condition">SCORE &gt; 25</div>
+            </div>
 
-        if (!phone || !orderId) {
-            errorMsg.innerText = "Please fill in both fields correctly.";
-            return;
-        }
+            <div class="tier-card tier-gold">
+                <div class="crystal-shape"></div>
+                <div class="tier-name">GOLD</div>
+                <div class="tier-condition">SCORE &gt; 30</div>
+            </div>
 
-        errorMsg.innerText = ""; 
-        nextBtn.innerText = "VERIFYING ORDER...";
-        nextBtn.disabled = true;
+            <div class="tier-card tier-ruby">
+                <div class="crystal-shape"></div>
+                <div class="tier-name">RUBY</div>
+                <div class="tier-condition">SCORE &gt; 40</div>
+            </div>
+        </div>
 
-        try {
-            const response = await fetch(`${GOOGLE_URL}?action=verify&code=${encodeURIComponent(orderId)}`);
-            const result = await response.text();
-            
-            if (result.trim() === "VALID") {
-                sessionStorage.setItem('player_authenticated', 'true');
-                sessionStorage.setItem('active_coupon', orderId);
-                sessionStorage.setItem('customer_phone', phone);
-                window.location.href = "game-selection.html"; 
-            } else {
-                errorMsg.innerText = "INVALID OR ALREADY PLAYED ORDER NUMBER";
+        <div class="gate-inputs">
+            <h3>ENTER YOUR DETAILS</h3>
+            <input type="tel" id="cust_phone" placeholder="ENTER PHONE NUMBER" autocomplete="off" maxlength="15">
+            <input type="text" id="order_input" placeholder="ENTER ODOO ORDER ID" autocomplete="off">
+            <div class="error-message" id="verification-error"></div>
+            <button id="submit-btn" onclick="validateOrder()">NEXT</button>
+        </div>
+    </div>
+
+    <script>
+        // Update this to match your deployed Google Web App Execution URL address
+        const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbxGLAXJpIhqPxxmMsoqhxD1aZHbIGslnuO4GSPRRKKylzdzEzs3ZeMaMVkoU1YyWNMBEw/exec";
+
+        async function validateOrder() {
+            const phone = document.getElementById('cust_phone').value.trim();
+            const orderId = document.getElementById('order_input').value.trim().toUpperCase();
+            const errorMsg = document.getElementById('verification-error');
+            const nextBtn = document.getElementById('submit-btn');
+
+            if (!phone || !orderId) {
+                errorMsg.innerText = "Please fill in both fields correctly.";
+                return;
+            }
+
+            errorMsg.innerText = ""; 
+            nextBtn.innerText = "VERIFYING ORDER...";
+            nextBtn.disabled = true;
+
+            try {
+                const response = await fetch(`${GOOGLE_URL}?action=verify&code=${encodeURIComponent(orderId)}`);
+                const result = await response.text();
+                
+                if (result.trim() === "VALID") {
+                    sessionStorage.setItem('player_authenticated', 'true');
+                    sessionStorage.setItem('active_coupon', orderId);
+                    sessionStorage.setItem('customer_phone', phone);
+                    window.location.href = "game-selection.html"; 
+                } else {
+                    errorMsg.innerText = "INVALID OR ALREADY PLAYED ORDER NUMBER";
+                    nextBtn.innerText = "NEXT";
+                    nextBtn.disabled = false;
+                }
+            } catch (error) {
+                errorMsg.innerText = "SERVER CONNECTION FAILED. TRY AGAIN.";
                 nextBtn.innerText = "NEXT";
                 nextBtn.disabled = false;
             }
-        } catch (error) {
-            errorMsg.innerText = "SERVER CONNECTION FAILED. TRY AGAIN.";
-            nextBtn.innerText = "NEXT";
-            nextBtn.disabled = false;
         }
-    }
 
-    // Capture tablet soft-keyboard Enter buttons easily
-    document.getElementById('order_input').addEventListener('keypress', function (e) {
-        if (e.key === 'Enter') {
-            validateOrder();
-        }
-    });
-</script>
+        document.getElementById('order_input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                validateOrder();
+            }
+        });
+    </script>
 </body>
 </html>
